@@ -1,4 +1,3 @@
-import imp
 from flask import Flask
 from src.routes import Routes
 
