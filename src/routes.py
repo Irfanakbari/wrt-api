@@ -1,5 +1,6 @@
 import src.success as sukses
 import src.scrap as scrap
+from flask import request as req
 
 
 class Routes:
@@ -32,4 +33,12 @@ class Routes:
 
         @app.route('/manga')
         def manga():
-            return scrap.get_detail_manga()
+            return scrap.get_detail_manga(req.args.get("link"))
+
+        @app.route('/search')
+        def search():
+            return scrap.search_komik()
+
+        @app.route('/read')
+        def read():
+            return scrap.get_reader_page(req.args.get('link'))

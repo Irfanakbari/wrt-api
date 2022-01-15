@@ -1,6 +1,6 @@
+from ast import keyword
 from asyncio.windows_events import NULL
 import json
-from urllib import request
 from bs4 import BeautifulSoup as bs
 from flask import request as req
 import requests
@@ -12,6 +12,8 @@ cache2 = TTLCache(maxsize=100, ttl=10000)
 cache3 = TTLCache(maxsize=100, ttl=900)
 cache4 = TTLCache(maxsize=100, ttl=400)
 cache5 = TTLCache(maxsize=100, ttl=900)
+cache6 = TTLCache(maxsize=100, ttl=1000)
+cachedetail = TTLCache(maxsize=100, ttl=900)
 
 
 @cached(cache)
@@ -28,8 +30,9 @@ def get_homepage():
         # GET POPULER
         for data in soup.find("div", class_="hothome").find_all("div", class_="bs"):
             tmp = {
-                "title": data.find("div", class_="tt").text,
+                "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
+                "hot": data.find("div", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
                 "last_chapter": data.find("div", class_="epxs").text,
                 "skor": data.find("div", class_="numscore").text
@@ -39,8 +42,9 @@ def get_homepage():
         # GET PROJECT
         for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[0].find_all("div", class_="bs"):
             tmp = {
-                "title": data.find("a").text,
+                "title": data.find("div", class_="tt").find("a").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
+                "hot": data.find("div", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
                 "last_chapter": data.find("ul", class_="chfiv").find("li").find("a").text.replace("Ch. ", "Chapter"),
                 "last_update": data.find("ul", class_="chfiv").find("li").find("span").text
@@ -50,8 +54,9 @@ def get_homepage():
         # GET RILIS
         for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[1].find_all("div", class_="utao"):
             tmp = {
-                "title": data.find("div", class_="luf").find("a").find("h4").text,
+                "title": data.find("div", class_="luf").find("a").find("h4").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("div", class_="luf").find("a").get("href"),
+                "hot": data.find("span", class_="hot") is not None,
                 "img": data.find("img").get("src"),
                 "last_chapter": data.find("ul", class_="Manga").find("li").find("a").text.replace("Ch. ", "Chapter"),
                 "last_update": data.find("ul", class_="Manga").find("li").find("span").text
@@ -61,8 +66,9 @@ def get_homepage():
         # GET UPCOMING
         for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[2].find_all("div", class_="bs"):
             tmp = {
-                "title": data.find("div", class_="tt").text,
+                "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
+                "hot": data.find("div", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
             }
             upcoming.append(tmp)
@@ -114,6 +120,7 @@ def get_project():
                 tmp = {
                     "title": data.find("div", class_="tt").text,
                     "link": data.find("a").get("href"),
+                    "hot": data.find("div", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
                     "last_chapter": data.find("div", class_="epxs").text,
                     "last_update": data.find("div", class_="epxdate").text,
@@ -153,6 +160,7 @@ def get_allproject():
                 project.append({
                     "title": data.find("div", class_="tt").text,
                     "link": data.find("a").get("href"),
+                    "hot": data.find("div", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
                     "last_chapter": data.find("div", class_="epxs").text,
                     "last_update": data.find("div", class_="epxdate").text,
@@ -196,27 +204,38 @@ def get_manga_list():
         }, indent=5)
 
 
-def get_detail_manga():
-    if req.args.get("link") is not None:
+@cached(cachedetail)
+def get_detail_manga(url):
+    if url is not None:
         url = req.args.get("link")
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
             detail = []
             tmp = []
+            rekomendasi = []
             tmp2 = []
             tmp3 = []
             for data in soup.find("table", class_="infotable").find_all("tr"):
-                tmp.append(data.find_all("td")[1].text)
+                tmp.append(data.find_all("td")[1].text.replace("\n", ""))
             for data2 in soup.find("div", class_="seriestugenre").find_all("a"):
                 tmp2.append(data2.text)
+            for data3 in soup.find("div", class_="listupd").find_all("div", class_="bs"):
+                rekomendasi.append({
+                    "title": data3.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
+                    "link": data3.find("a").get("href"),
+                    "cover": data3.find("img").get("src"),
+                    "last_chapter": data3.find("div", class_="epxs").text,
+                    "skor": data3.find("div", class_="numscore").text,
+                })
             for data3 in soup.find("div", class_="eplister").find_all("li"):
                 tmp3.append({
                     "chapter": data3.find("div", class_="eph-num").find("a").find("span").text,
                     "link": data3.find("div", class_="eph-num").find("a").get("href"),
                     "update": data3.find("div", class_="eph-num").find("a").find("span", class_="chapterdate").text
                 })
-                alt = soup.find("div", class_="seriestualt").get_text()
+                alt = soup.find(
+                    "div", class_="seriestualt").get_text().replace("\n", "")
 
             detail.append({
                 "post_id": soup.find("article").get("id"),
@@ -224,15 +243,81 @@ def get_detail_manga():
                 "alternative": alt,
                 "cover": soup.find("div", class_="seriestucontl").find("img").get("src"),
                 "rating": soup.find("div", class_="rating-prc").find("div", class_="num").text,
+                "adult": soup.find("div", class_="alr") is not None,
                 "sinopsis": soup.find("div", class_="seriestuhead").find("p").text,
                 "info": tmp,
                 "genre": tmp2,
-                "list_chapter": tmp3
+                "list_chapter": tmp3,
+                "rekomendasi": rekomendasi
             })
             return json.dumps({
                 "code": 200,
                 "status": "success",
                 "data": detail
+            }, indent=5)
+        else:
+            return error_connection()
+    else:
+        return json.dumps({
+            "code": 400,
+            "status": "failed",
+            "message": "Link parameter is required"
+        }, indent=5)
+
+
+def search_komik():
+    keyword = req.args.get("keyword")
+    url = "https://wrt.my.id/?s=" + keyword
+    project = []
+    if req.args.get("keyword") is not None and req.args.get("page") is not None:
+        r = requests.get(url)
+        soup = bs(r.text, "html.parser")
+        pageLength = int(
+            soup.find("div", class_="pagination").find_all("a")[-2].text)
+        url = "https://wrt.my.id/page/" + \
+            req.args.get("page") + "?s=" + keyword
+        r = requests.get(url)
+        soup = bs(r.text, "html.parser")
+        if r.status_code == 200:
+            for data in soup.find_all("div", class_="bs"):
+                project.append({
+                    "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
+                    "link": data.find("a").get("href"),
+                    "hot": data.find("div", class_="hotx") is not None,
+                    "cover": data.find("img").get("src"),
+                    "last_chapter": data.find("div", class_="epxs").text,
+                    "skor": data.find("div", class_="numscore").text,
+                }
+                )
+        else:
+            return error_connection()
+        return json.dumps({
+            "code": 200,
+            "status": "success",
+            "page_length": pageLength,
+            "data": project
+        }, indent=5)
+    else:
+        return json.dumps({
+            "code": 400,
+            "status": "failed",
+            "message": "Keyword parameter is required"
+        }, indent=5)
+
+
+@cached(cache6)
+def get_reader_page(url):
+    if url is not None:
+        r = requests.get(url)
+        soup = bs(r.text, "html.parser")
+        if r.status_code == 200:
+            link = []
+            for data in soup.find("div", id="readerarea").find_all("img"):
+                link.append(data.get("src"))
+            return json.dumps({
+                "code": 200,
+                "status": "success",
+                "data": link
             }, indent=5)
         else:
             return error_connection()
