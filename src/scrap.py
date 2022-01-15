@@ -1,5 +1,3 @@
-from ast import keyword
-from asyncio.windows_events import NULL
 import json
 from bs4 import BeautifulSoup as bs
 from flask import request as req
