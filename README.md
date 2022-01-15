@@ -2,7 +2,9 @@
 
 API dari website komik [World Romance Translation](https://wrt.my.id/) dengan menggunakan Flask dan metode Scraping
 
+## Example 
 
+Base URL = https://wrt-api.herokuapp.com/
 
 ## Instalasi
 
