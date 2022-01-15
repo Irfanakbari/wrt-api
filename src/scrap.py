@@ -272,8 +272,11 @@ def search_komik():
     if req.args.get("keyword") is not None and req.args.get("page") is not None:
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
-        pageLength = int(
-            soup.find("div", class_="pagination").find_all("a")[-2].text)
+        if soup.find("div", class_="pagination") is None:
+            pageLength = int(
+                soup.find("div", class_="pagination").find_all("a")[-2].text)
+        else:
+            pageLength = 1
         url = "https://wrt.my.id/page/" + \
             req.args.get("page") + "?s=" + keyword
         r = requests.get(url)
