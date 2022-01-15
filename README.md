@@ -9,11 +9,15 @@ API dari website komik [World Romance Translation](https://wrt.my.id/) dengan me
 * Clone this Repo
 * Buat environment
 ```bash
-python -m venv env
+python -m venv venv
 ```
 * Aktifkan environment
 ```bash
-env\Scripts\activate.bat
+venv\Scripts\activate.bat
+```
+* Install Flask
+```bash
+pip install Flask
 ```
 * Install semua library yang diperlukan
 ```bash
@@ -29,7 +33,7 @@ set FLASK_APP=app.py
 ```
 * Start server:
 ```bash
-python -m flask run
+flask run
 ```
 
 Url [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
