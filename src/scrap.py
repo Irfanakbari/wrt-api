@@ -1,11 +1,12 @@
 import json
 from bs4 import BeautifulSoup as bs
 from flask import request as req
+from flask import make_response as res
 import requests
 from cachetools import cached, TTLCache
 from src.success import error_connection
 
-cache = TTLCache(maxsize=100, ttl=300)
+cache = TTLCache(maxsize=100, ttl=400)
 cache2 = TTLCache(maxsize=100, ttl=10000)
 cache3 = TTLCache(maxsize=100, ttl=900)
 cache4 = TTLCache(maxsize=100, ttl=400)
@@ -30,7 +31,7 @@ def get_homepage():
             tmp = {
                 "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
-                "hot": data.find("div", class_="hotx") is not None,
+                "hot": data.find("span", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
                 "last_chapter": data.find("div", class_="epxs").text,
                 "skor": data.find("div", class_="numscore").text
@@ -42,7 +43,7 @@ def get_homepage():
             tmp = {
                 "title": data.find("div", class_="tt").find("a").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
-                "hot": data.find("div", class_="hotx") is not None,
+                "hot": data.find("span", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
                 "last_chapter": data.find("ul", class_="chfiv").find("li").find("a").text.replace("Ch. ", "Chapter"),
                 "last_update": data.find("ul", class_="chfiv").find("li").find("span").text
@@ -66,12 +67,12 @@ def get_homepage():
             tmp = {
                 "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
                 "link": data.find("a").get("href"),
-                "hot": data.find("div", class_="hotx") is not None,
+                "hot": data.find("span", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
             }
             upcoming.append(tmp)
 
-        return json.dumps({
+        ress = res(json.dumps({
             "code": 200,
             "status": "success",
             "data": {
@@ -80,7 +81,10 @@ def get_homepage():
                 "rilis": rilis,
                 "upcoming": upcoming
             }
-        }, indent=5)
+        }, indent=4))
+        ress.headers["Access-Control-Allow-Origin"] = "*"
+        ress.headers["Content-Type"] = "application/json"
+        return ress
     else:
         return error_connection()
 
@@ -98,11 +102,16 @@ def get_genre():
                 "link": data.find("a").get("href")
             }
             genre.append(tmp)
-        return json.dumps({
-            "code": 200,
-            "status": "success",
-            "data": genre
-        }, indent=5)
+        ress = res(
+            json.dumps({
+                "code": 200,
+                "status": "success",
+                "data": genre
+            }, indent=4)
+        )
+        ress.headers["Access-Control-Allow-Origin"] = "*"
+        ress.headers["Content-Type"] = "application/json"
+        return ress
     else:
         return error_connection()
 
@@ -118,19 +127,24 @@ def get_project():
                 tmp = {
                     "title": data.find("div", class_="tt").text,
                     "link": data.find("a").get("href"),
-                    "hot": data.find("div", class_="hotx") is not None,
+                    "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
                     "last_chapter": data.find("div", class_="epxs").text,
                     "last_update": data.find("div", class_="epxdate").text,
                 }
                 project.append(tmp)
-            return json.dumps({
-                "code": 200,
-                "status": "success",
-                "total_page": soup.find("div", class_="pagination").find_all("a")[-1].text,
-                "current_page": req.args.get("page"),
-                "data": project
-            }, indent=5)
+            ress = res(
+                json.dumps({
+                    "code": 200,
+                    "status": "success",
+                    "total_page": soup.find("div", class_="pagination").find_all("a")[-1].text,
+                    "current_page": req.args.get("page"),
+                    "data": project
+                }, indent=4)
+            )
+            ress.headers["Access-Control-Allow-Origin"] = "*"
+            ress.headers["Content-Type"] = "application/json"
+            return ress
         else:
             return error_connection()
     else:
@@ -138,7 +152,7 @@ def get_project():
             "code": 400,
             "status": "failed",
             "message": "Page parameter is required"
-        }, indent=5)
+        }, indent=4)
 
 
 @cached(cache4)
@@ -158,7 +172,7 @@ def get_allproject():
                 project.append({
                     "title": data.find("div", class_="tt").text,
                     "link": data.find("a").get("href"),
-                    "hot": data.find("div", class_="hotx") is not None,
+                    "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
                     "last_chapter": data.find("div", class_="epxs").text,
                     "last_update": data.find("div", class_="epxdate").text,
@@ -167,12 +181,16 @@ def get_allproject():
 
         else:
             return error_connection()
-    return json.dumps({
+    ress = res(json.dumps({
         "code": 200,
         "status": "success",
         "page_length": total_page,
         "data": project
-    }, indent=8)
+    }, indent=8))
+
+    ress.headers["Access-Control-Allow-Origin"] = "*"
+    ress.headers["Content-Type"] = "application/json"
+    return ress
 
 
 @cached(cache5)
@@ -195,11 +213,14 @@ def get_manga_list():
                 "abjad": abjd_tmp,
                 "manga": tmp2
             })
-        return json.dumps({
+        ress = res(json.dumps({
             "code": 200,
             "status": "success",
             "data": manga
-        }, indent=5)
+        }, indent=4))
+        ress.headers["Access-Control-Allow-Origin"] = "*"
+        ress.headers["Content-Type"] = "application/json"
+        return ress
 
 
 @cached(cachedetail)
@@ -248,19 +269,22 @@ def get_detail_manga(url):
                 "list_chapter": tmp3,
                 "rekomendasi": rekomendasi
             })
-            return json.dumps({
+            ress = res(json.dumps({
                 "code": 200,
                 "status": "success",
                 "data": detail
-            }, indent=5)
+            }, indent=4))
+            ress.headers["Access-Control-Allow-Origin"] = "*"
+            ress.headers["Content-Type"] = "application/json"
+            return ress
         else:
             return error_connection()
     else:
-        return json.dumps({
+        return res(json.dumps({
             "code": 400,
             "status": "failed",
             "message": "Link parameter is required"
-        }, indent=5)
+        }, indent=4))
 
 
 def search_komik():
@@ -284,7 +308,7 @@ def search_komik():
                 project.append({
                     "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
                     "link": data.find("a").get("href"),
-                    "hot": data.find("div", class_="hotx") is not None,
+                    "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
                     "last_chapter": data.find("div", class_="epxs").text,
                     "skor": data.find("div", class_="numscore").text,
@@ -292,18 +316,21 @@ def search_komik():
                 )
         else:
             return error_connection()
-        return json.dumps({
+        ress = res(json.dumps({
             "code": 200,
             "status": "success",
             "page_length": pageLength,
             "data": project
-        }, indent=5)
+        }, indent=4))
+        ress.headers["Access-Control-Allow-Origin"] = "*"
+        ress.headers["Content-Type"] = "application/json"
+        return ress
     else:
-        return json.dumps({
+        return res(json.dumps({
             "code": 400,
             "status": "failed",
             "message": "Keyword parameter is required"
-        }, indent=5)
+        }, indent=4))
 
 
 @cached(cache6)
@@ -313,18 +340,39 @@ def get_reader_page(url):
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
             link = []
+            linkmin = []
+            linkmedium = []
             for data in soup.find("div", id="readerarea").find_all("img"):
                 link.append(data.get("src"))
-            return json.dumps({
+            for data2 in link:
+                if data2.find("cdn3.wrt.my.id") != -1:
+                    linkmedium.append(data2 + "?quality=50")
+                    linkmin.append(data2 + "?quality=25")
+                if data2.find("images2.imgbox.com") != -1:
+                    linkmedium.append(data2.replace(
+                        "images2.imgbox.com", "cdn4.wrt.my.id") + "?quality=50")
+                    linkmin.append(data2.replace(
+                        "images2.imgbox.com", "cdn4.wrt.my.id") + "?quality=25")
+                if data2.find("i.ibb.co") != -1:
+                    linkmedium.append(data2.replace(
+                        "i.ibb.co", "cdn5.wrt.my.id") + "?quality=50")
+                    linkmin.append(data2.replace(
+                        "i.ibb.co", "cdn5.wrt.my.id") + "?quality=25")
+            ress = res(json.dumps({
                 "code": 200,
                 "status": "success",
-                "data": link
-            }, indent=5)
+                "data-high": link,
+                "data-med": linkmedium,
+                "data-min": linkmin
+            }, indent=4))
+            ress.headers["Access-Control-Allow-Origin"] = "*"
+            ress.headers["Content-Type"] = "application/json"
+            return ress
         else:
             return error_connection()
     else:
-        return json.dumps({
+        return res(json.dumps({
             "code": 400,
             "status": "failed",
             "message": "Link parameter is required"
-        }, indent=5)
+        }, indent=4))
