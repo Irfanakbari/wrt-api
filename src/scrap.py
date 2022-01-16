@@ -12,7 +12,7 @@ cache3 = TTLCache(maxsize=100, ttl=900)
 cache4 = TTLCache(maxsize=100, ttl=400)
 cache5 = TTLCache(maxsize=100, ttl=900)
 cache6 = TTLCache(maxsize=100, ttl=1000)
-cachedetail = TTLCache(maxsize=100, ttl=900)
+cachedetail = TTLCache(maxsize=100, ttl=1-00)
 
 
 @cached(cache)
@@ -24,12 +24,12 @@ def get_homepage():
         populer = []
         project = []
         rilis = []
-        upcoming = []
 
         # GET POPULER
         for data in soup.find("div", class_="hothome").find_all("div", class_="bs"):
             tmp = {
                 "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
+                "slug": data.find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                 "link": data.find("a").get("href"),
                 "hot": data.find("span", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
@@ -42,6 +42,7 @@ def get_homepage():
         for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[0].find_all("div", class_="bs"):
             tmp = {
                 "title": data.find("div", class_="tt").find("a").text.replace("\n", "").replace("\t", ""),
+                "slug": data.find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                 "link": data.find("a").get("href"),
                 "hot": data.find("span", class_="hotx") is not None,
                 "img": data.find("img").get("src"),
@@ -54,6 +55,7 @@ def get_homepage():
         for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[1].find_all("div", class_="utao"):
             tmp = {
                 "title": data.find("div", class_="luf").find("a").find("h4").text.replace("\n", "").replace("\t", ""),
+                "slug": data.find("div", class_="luf").find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                 "link": data.find("div", class_="luf").find("a").get("href"),
                 "hot": data.find("span", class_="hot") is not None,
                 "img": data.find("img").get("src"),
@@ -62,16 +64,6 @@ def get_homepage():
             }
             rilis.append(tmp)
 
-        # GET UPCOMING
-        for data in soup.find("div", class_="postbody").find_all("div", class_="bixbox")[2].find_all("div", class_="bs"):
-            tmp = {
-                "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
-                "link": data.find("a").get("href"),
-                "hot": data.find("span", class_="hotx") is not None,
-                "img": data.find("img").get("src"),
-            }
-            upcoming.append(tmp)
-
         ress = res(json.dumps({
             "code": 200,
             "status": "success",
@@ -79,7 +71,6 @@ def get_homepage():
                 "populer": populer,
                 "project": project,
                 "rilis": rilis,
-                "upcoming": upcoming
             }
         }, indent=4))
         ress.headers["Access-Control-Allow-Origin"] = "*"
@@ -116,9 +107,9 @@ def get_genre():
         return error_connection()
 
 
-def get_project():
-    if req.args.get("page") is not None:
-        url = "https://wrt.my.id/project-wrt/page/" + req.args.get("page")
+def get_project(page):
+    if page is not 0:
+        url = "https://wrt.my.id/project-wrt/page/" + str(page)
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
@@ -126,6 +117,7 @@ def get_project():
             for data in soup.find_all("div", class_="bs"):
                 tmp = {
                     "title": data.find("div", class_="tt").text,
+                    "slug": data.find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                     "link": data.find("a").get("href"),
                     "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
@@ -171,6 +163,7 @@ def get_allproject():
             for data in soup.find_all("div", class_="bs"):
                 project.append({
                     "title": data.find("div", class_="tt").text,
+                    "slug": data.find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                     "link": data.find("a").get("href"),
                     "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
@@ -224,10 +217,12 @@ def get_manga_list():
 
 
 @cached(cachedetail)
-def get_detail_manga(url):
-    if url is not None:
-        url = req.args.get("link")
+def get_detail_manga(slug):
+    if slug is not None:
+        url = 'https://wrt.my.id/manga/' + slug
         r = requests.get(url)
+        key = ["Status", "Type", "Rilis", "Author", "Artist",
+               "Serialization", "Uploader", "Posted On", "Last Update", "Viewers"]
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
             detail = []
@@ -235,8 +230,11 @@ def get_detail_manga(url):
             rekomendasi = []
             tmp2 = []
             tmp3 = []
-            for data in soup.find("table", class_="infotable").find_all("tr"):
-                tmp.append(data.find_all("td")[1].text.replace("\n", ""))
+            for index, data in enumerate(soup.find("table", class_="infotable").find_all("tr")):
+                tmp.append({
+                    key[index]: data.find_all(
+                        "td")[1].text.replace("\n", "")
+                })
             for data2 in soup.find("div", class_="seriestugenre").find_all("a"):
                 tmp2.append(data2.text)
             for data3 in soup.find("div", class_="listupd").find_all("div", class_="bs"):
@@ -250,6 +248,7 @@ def get_detail_manga(url):
             for data3 in soup.find("div", class_="eplister").find_all("li"):
                 tmp3.append({
                     "chapter": data3.find("div", class_="eph-num").find("a").find("span").text,
+                    "slug": data3.find("div", class_="eph-num").find("a").get("href").split("https://wrt.my.id")[1].split("/")[1].replace("/", ""),
                     "link": data3.find("div", class_="eph-num").find("a").get("href"),
                     "update": data3.find("div", class_="eph-num").find("a").find("span", class_="chapterdate").text
                 })
@@ -287,11 +286,10 @@ def get_detail_manga(url):
         }, indent=4))
 
 
-def search_komik():
-    keyword = req.args.get("keyword")
+def search_komik(keyword, page):
     url = "https://wrt.my.id/?s=" + keyword
     project = []
-    if req.args.get("keyword") is not None and req.args.get("page") is not None:
+    if keyword is not None and page is not None:
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
         if soup.find("div", class_="pagination") is None:
@@ -300,13 +298,14 @@ def search_komik():
         else:
             pageLength = 1
         url = "https://wrt.my.id/page/" + \
-            req.args.get("page") + "?s=" + keyword
+            page + "?s=" + keyword
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
             for data in soup.find_all("div", class_="bs"):
                 project.append({
                     "title": data.find("div", class_="tt").text.replace("\n", "").replace("\t", ""),
+                    "slug": data.find("a").get("href").split("https://wrt.my.id/manga")[1].split("/")[1].replace("/", ""),
                     "link": data.find("a").get("href"),
                     "hot": data.find("span", class_="hotx") is not None,
                     "cover": data.find("img").get("src"),
@@ -334,8 +333,9 @@ def search_komik():
 
 
 @cached(cache6)
-def get_reader_page(url):
-    if url is not None:
+def get_reader_page(slug):
+    if slug is not None:
+        url = "https://wrt.my.id/" + slug
         r = requests.get(url)
         soup = bs(r.text, "html.parser")
         if r.status_code == 200:
