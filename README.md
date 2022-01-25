@@ -42,17 +42,7 @@ Url [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
 ## Endpoint
 
-| Url        | Params           | Type | Description |
-| ------------- |:-------------:| :-----:| :----------:|
-| /      | - | - | Cek Status koneksi ke server |
-| /home  | - | - | Get komik list homepage |
-| /genre  | - | - | Get list genre |
-| /project/all  | - | - | Get all list project |
-| /project  | page | Number | Get list project in page |
-| /mangalist  | - | - | Get all manga list |
-| /manga  | link | String | Get detail page manga |
-| /search  | keyword, page | String, Number | Get search result |
-| /read  | link | String | Get reading page image data url |
+Coming soon
 
 
 
