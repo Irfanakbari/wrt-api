@@ -43,3 +43,11 @@ class Routes:
         @app.route('/api/read/<slug>')
         def read(slug):
             return scrap.get_reader_page(slug)
+
+        @app.route('/api/mangalist/<page>')
+        def mangalist_page(page):
+            return scrap.get_list(page)
+
+        @app.route('/api/new/<page>')
+        def new(page):
+            return scrap.get_update(page)
