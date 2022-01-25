@@ -1,7 +1,5 @@
-from os import link
 import src.success as sukses
 import src.scrap as scrap
-from flask import request as req
 
 
 class Routes:
