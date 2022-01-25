@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
+from flask import Flask
 from src.routes import Routes
 
 app = Flask(__name__)
